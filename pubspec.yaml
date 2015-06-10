@@ -1,6 +1,6 @@
 name: travis
 description: A starting point for Dart libraries or applications.
-version: 0.0.1-dev
+version: 0.0.2-dev
 author: Kevin Moore <kevmoo@google.com>
 homepage: https://github.com/kevmoo/travis.dart
 environment:

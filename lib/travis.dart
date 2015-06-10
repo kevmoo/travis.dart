@@ -8,6 +8,36 @@ import 'package:path/path.dart' as p;
 
 const _host = 'api.travis-ci.org';
 
+const _encoder = const JsonEncoder.withIndent('  ');
+
+class Commit {
+  final int id;
+  final String sha, branch, message, author_name, author_email, compare_url;
+
+  Commit(this.id, this.sha, this.branch, this.message, this.author_name,
+      this.author_email, this.compare_url);
+
+  factory Commit.fromJson(Map<String, dynamic> json) => new Commit(json['id'],
+      json['sha'], json['branch'], json['message'], json['author_name'],
+      json['author_email'], json['compare_url']);
+
+  /*
+  {
+  "id": 18898078,
+  "sha": "2ea50e52a3426ffb9d1197e64f49c4898db5d291",
+  "branch": "master",
+  "message": "Add functions to help with --packages/--package-root command line parameters.\n\nR=pquitslund@google.com, sgjesse@google.com\n\nReview URL: https://codereview.chromium.org//1166443005.",
+  "committed_at": "2015-06-10T07:43:56Z",
+  "author_name": "Lasse R.H. Nielsen",
+  "author_email": "lrn@google.com",
+  "committer_name": "Lasse R.H. Nielsen",
+  "committer_email": "lrn@google.com",
+  "compare_url": "https://github.com/dart-lang/package_config/compare/cce473e326d5...2ea50e52a342",
+  "pull_request_number": null
+}
+   */
+}
+
 class Repo {
   final int id;
   final String slug;
@@ -46,16 +76,22 @@ List<int> _create(value) {
   return new List<int>.unmodifiable(value);
 }
 
+class Job {
+
+}
+
 class Build {
   final int commitId, duration, id, repositoryId;
   final List<int> jobIds;
 
   Build(this.commitId, this.duration, this.id, this.repositoryId, this.jobIds);
 
-  factory Build.fromJson(Map<String, dynamic> json) => new Build(
-      json['commit_id'], json['duration'], json['id'], json['repository_id'],
-      _create(json['job_ids']));
+  factory Build.fromJson(Map<String, dynamic> json,
+      {Map<String, dynamic> commitJson}) {
 
+    return new Build(json['commit_id'], json['duration'], json['id'],
+        json['repository_id'], _create(json['job_ids']));
+  }
   /*
    {
       "commit_id": 6534711,
@@ -75,6 +111,20 @@ class Build {
    */
 }
 
+const _buildArgError =
+    'You must provide one and only one of `ids`, `repositoryId`, `slug`.';
+
+Map<int, Map> _mapToIds(List<Map> source) {
+  if (source == null) source = const [];
+
+  return source.fold(<int, Map>{}, (map, value) {
+    var id = value['id'];
+    assert(id != null);
+    map[id] = value;
+    return map;
+  });
+}
+
 class Travis {
   final String token;
   final IOClient _client;
@@ -82,9 +132,106 @@ class Travis {
   Travis(this.token, {IOClient httpClient})
       : _client = (httpClient == null) ? new IOClient() : httpClient;
 
-  Future<Build> build() {}
+  Future<Job> job(int jobId) async {
+    var path = ['jobs', jobId.toString()];
+    var json = await send('GET', p.url.joinAll(path));
 
-  Future<List<Repo>> repos({int id, String org, String repository, bool active,
+    /*
+    {
+  "job": {
+    "id": 66204145,
+    "repository_id": 4793024,
+    "repository_slug": "dart-lang/package_config",
+    "build_id": 66204144,
+    "commit_id": 18906759,
+    "log_id": 46157763,
+    "number": "80.1",
+    "config": {
+      "language": "dart",
+      "dart": "dev",
+      "script": "./tool/travis.sh",
+      "sudo": false,
+      ".result": "configured",
+      "os": "linux"
+    },
+    "state": "failed",
+    "started_at": "2015-06-10T12:04:18Z",
+    "finished_at": "2015-06-10T12:04:35Z",
+    "queue": "builds.docker",
+    "allow_failure": false,
+    "tags": null,
+    "annotation_ids": []
+  },
+  "commit": {
+    "id": 18906759,
+    "sha": "d99d926741298bc250d0788140af78276a7e0a76",
+    "branch": "master",
+    "message": "Tweak comments added by `write` function on packages_file.dart.\n\nNow adds \"# \" in front, not just \"#\", and doesn't treat the empty\nstring after a final \"\\n\" as an extra line.\n\nR=sgjesse@google.com\n\nReview URL: https://codereview.chromium.org//1167223004.",
+    "committed_at": "2015-06-10T12:03:44Z",
+    "author_name": "Lasse R.H. Nielsen",
+    "author_email": "lrn@google.com",
+    "committer_name": "Lasse R.H. Nielsen",
+    "committer_email": "lrn@google.com",
+    "compare_url": "https://github.com/dart-lang/package_config/compare/2ea50e52a342...d99d92674129"
+  },
+  "annotations": []
+}
+     */
+
+    print(_encoder.convert(json));
+
+    throw 'not yet!';
+  }
+
+  Future<List<Build>> builds(
+      {List<int> ids, int repositoryId, String slug, bool withJobs: false}) async {
+    var args = {};
+    if (ids != null && ids.isNotEmpty) {
+      args['ids'] = ids.join((','));
+    }
+
+    if (repositoryId != null) {
+      if (args.isNotEmpty) {
+        throw new ArgumentError.value(
+            repositoryId, 'repositoryId', _buildArgError);
+      }
+      args['repository_id'] = repositoryId;
+    }
+
+    if (slug != null) {
+      if (args.isNotEmpty) {
+        throw new ArgumentError.value(slug, 'slug', _buildArgError);
+      }
+    }
+
+    if (args.isEmpty) {
+      throw new ArgumentError(_buildArgError);
+    }
+
+    var json = await send('GET', 'builds', args: args);
+
+    Map<int, Map> buildsMap = _mapToIds(json['builds']);
+
+    Map<int, Map> commitMap = _mapToIds(json['commits']);
+
+    var builds = <Build>[];
+
+    buildsMap.forEach((int id, Map buildJson) {
+      var commitJson = commitMap[buildJson['commit_id']];
+
+      if (withJobs) {
+        throw 'not yet!';
+      }
+
+      var build = new Build.fromJson(buildJson, commitJson: commitJson);
+
+      builds.add(build);
+    });
+
+    return builds;
+  }
+
+  Future<List<Repo>> repos({int id, String org, String repository, bool activeOnly: false,
       String member}) async {
     var path = <String>['repos'];
 
@@ -110,7 +257,7 @@ class Travis {
     }
 
     var args = {};
-    if (active == true) {
+    if (activeOnly == true) {
       args['active'] = 'true';
     }
 

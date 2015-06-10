@@ -10,7 +10,17 @@ main(List<String> args) async {
   var response = await client.repos(member: 'kevmoo');
 
   for (Repo r in response) {
-    print([r.slug, r.lastBuildId, r.lastBuildNumber]);
+    print(r.slug);
+
+    List<Build> builds = await client.builds(ids: [r.lastBuildId]);
+
+    var build = builds.first;
+
+    print([build.id, build.jobIds]);
+
+    for (int jobId in build.jobIds) {
+      var job = await client.job(jobId);
+    }
   }
 }
 
