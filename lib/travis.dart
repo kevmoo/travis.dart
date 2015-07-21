@@ -111,8 +111,6 @@ class JobInfo {
   JobInfo(this.job);
 
   factory JobInfo.fromJson(Map<String, dynamic> json) {
-    print(_encoder.convert(json));
-
     var job = new Job.fromJson(json['job']);
 
     // var commit =
@@ -313,8 +311,6 @@ class Travis {
   Future<Map<String, dynamic>> send(String method, String path,
       {Map<String, dynamic> jsonBody, Map<String, String> args}) async {
     var uri = new Uri.https(_host, path, args);
-
-    print(uri);
 
     var request = new Request(method, uri)
       ..headers['Accept'] = "application/vnd.travis-ci.2+json";
