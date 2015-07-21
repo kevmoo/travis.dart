@@ -76,7 +76,52 @@ List<int> _create(value) {
   return new List<int>.unmodifiable(value);
 }
 
-class Job {}
+class Job {
+  final int id;
+  final int repositoryId;
+  final String repositorySlug;
+  final int buildId;
+  final int commitId;
+  final int logId;
+  final String number;
+  final Map config;
+  final String state;
+  final String startedAt;
+  final String finishedAt;
+  final String queue;
+  final bool allowFailure;
+  final tags;
+  final List annotationIds;
+
+  Job(this.id, this.repositoryId, this.repositorySlug, this.buildId,
+      this.commitId, this.logId, this.number, this.config, this.state,
+      this.startedAt, this.finishedAt, this.queue, this.allowFailure, this.tags,
+      this.annotationIds);
+
+  factory Job.fromJson(Map<String, dynamic> json) => new Job(json["id"],
+      json["repository_id"], json["repository_slug"], json["build_id"],
+      json["commit_id"], json["log_id"], json["number"], json["config"],
+      json["state"], json["started_at"], json["finished_at"], json["queue"],
+      json["allow_failure"], json["tags"], json["annotation_ids"]);
+}
+
+class JobInfo {
+  final Job job;
+
+  JobInfo(this.job);
+
+  factory JobInfo.fromJson(Map<String, dynamic> json) {
+    print(_encoder.convert(json));
+
+    var job = new Job.fromJson(json['job']);
+
+    // var commit =
+
+    // var annotations =
+
+    return new JobInfo(job);
+  }
+}
 
 class Build {
   final int commitId, duration, id, repositoryId;
@@ -129,7 +174,7 @@ class Travis {
   Travis({this.token, IOClient httpClient})
       : _client = (httpClient == null) ? new IOClient() : httpClient;
 
-  Future<Job> job(int jobId) async {
+  Future<JobInfo> job(int jobId) async {
     var path = ['jobs', jobId.toString()];
     var json = await send('GET', p.url.joinAll(path));
 
@@ -175,9 +220,7 @@ class Travis {
 }
      */
 
-    print(_encoder.convert(json));
-
-    throw 'not yet!';
+    return new JobInfo.fromJson(json);
   }
 
   Future<List<Build>> builds({List<int> ids, int repositoryId, String slug,
