@@ -76,9 +76,7 @@ List<int> _create(value) {
   return new List<int>.unmodifiable(value);
 }
 
-class Job {
-
-}
+class Job {}
 
 class Build {
   final int commitId, duration, id, repositoryId;
@@ -88,7 +86,6 @@ class Build {
 
   factory Build.fromJson(Map<String, dynamic> json,
       {Map<String, dynamic> commitJson}) {
-
     return new Build(json['commit_id'], json['duration'], json['id'],
         json['repository_id'], _create(json['job_ids']));
   }
@@ -183,8 +180,8 @@ class Travis {
     throw 'not yet!';
   }
 
-  Future<List<Build>> builds(
-      {List<int> ids, int repositoryId, String slug, bool withJobs: false}) async {
+  Future<List<Build>> builds({List<int> ids, int repositoryId, String slug,
+      bool withJobs: false}) async {
     var args = {};
     if (ids != null && ids.isNotEmpty) {
       args['ids'] = ids.join((','));
@@ -231,8 +228,8 @@ class Travis {
     return builds;
   }
 
-  Future<List<Repo>> repos({int id, String org, String repository, bool activeOnly: false,
-      String member}) async {
+  Future<List<Repo>> repos({int id, String org, String repository,
+      bool activeOnly: false, String member}) async {
     var path = <String>['repos'];
 
     if (id != null) {
