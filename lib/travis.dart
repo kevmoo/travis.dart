@@ -126,7 +126,7 @@ class Travis {
   final String token;
   final IOClient _client;
 
-  Travis(this.token, {IOClient httpClient})
+  Travis({this.token, IOClient httpClient})
       : _client = (httpClient == null) ? new IOClient() : httpClient;
 
   Future<Job> job(int jobId) async {
@@ -274,8 +274,11 @@ class Travis {
     print(uri);
 
     var request = new Request(method, uri)
-      ..headers['Authorization'] = 'token $token'
       ..headers['Accept'] = "application/vnd.travis-ci.2+json";
+
+    if (token != null) {
+      request.headers['Authorization'] = 'token $token';
+    }
 
     if (jsonBody != null) {
       request.body = JSON.encode(jsonBody);

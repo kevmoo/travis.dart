@@ -8,7 +8,11 @@ import 'package:travis/travis.dart';
 
 main(List<String> args) async {
   await Chain.capture(() async {
-    var client = new Travis(args.single);
+    String token;
+    if (args.isNotEmpty) {
+      token = args.first;
+    }
+    var client = new Travis(token: token);
 
     var response = await client.repos(member: 'kevmoo');
 
