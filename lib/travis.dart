@@ -76,6 +76,16 @@ List<int> _create(value) {
   return new List<int>.unmodifiable(value);
 }
 
+class Config {
+  final String language;
+  final Map<String, dynamic> raw;
+
+  Config(this.language, this.raw);
+
+  factory Config.fromJson(Map<String, dynamic> json) =>
+      new Config(json['language'], json);
+}
+
 class Job {
   final int id;
   final int repositoryId;
@@ -84,7 +94,7 @@ class Job {
   final int commitId;
   final int logId;
   final String number;
-  final Map config;
+  final Config config;
   final String state;
   final String startedAt;
   final String finishedAt;
@@ -100,9 +110,10 @@ class Job {
 
   factory Job.fromJson(Map<String, dynamic> json) => new Job(json["id"],
       json["repository_id"], json["repository_slug"], json["build_id"],
-      json["commit_id"], json["log_id"], json["number"], json["config"],
-      json["state"], json["started_at"], json["finished_at"], json["queue"],
-      json["allow_failure"], json["tags"], json["annotation_ids"]);
+      json["commit_id"], json["log_id"], json["number"],
+      new Config.fromJson(json["config"]), json["state"], json["started_at"],
+      json["finished_at"], json["queue"], json["allow_failure"], json["tags"],
+      json["annotation_ids"]);
 }
 
 class JobInfo {
