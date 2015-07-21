@@ -345,4 +345,26 @@ class Travis {
 
     return JSON.decode(response.body);
   }
+
+  Future<String> getJobLog(int jobId) async {
+    // https://github.com/travis-ci/docs-travis-ci-com/issues/303
+    var uri = new Uri.https(_host, '/jobs/$jobId/log.txt');
+
+    var request = new Request('GET', uri);
+
+    // Can't figure out auth -- hmm...
+
+    var streamedResponse = await _client.send(request);
+
+    var response = await Response.fromStream(streamedResponse);
+    if (response.statusCode >= 400 && response.statusCode < 500) {
+      throw response.body;
+    }
+
+    if (response.statusCode >= 300 && response.statusCode < 400) {
+      throw 'not sure what to do with status code ${response.statusCode} - ${response.headers}';
+    }
+
+    return response.body;
+  }
 }
